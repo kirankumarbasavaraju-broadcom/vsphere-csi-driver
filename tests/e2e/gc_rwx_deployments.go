@@ -99,7 +99,7 @@ var _ = ginkgo.Describe("[rwm-csi-tkg] File Volume Provision with Deployments", 
 		22. Check if the VolumeID is deleted from CNS by using CNSQuery API
 		23. Cleanup SC
 	*/
-	ginkgo.It("Verify RWX volumes with Deployment", func() {
+	ginkgo.It("Verify RWX volumes with Deployment", ginkgo.Label(p0, file, tkg, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 

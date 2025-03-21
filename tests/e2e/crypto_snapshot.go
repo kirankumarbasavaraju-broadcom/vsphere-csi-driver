@@ -173,7 +173,7 @@ var _ = ginkgo.Describe("[csi-supervisor] [encryption] Block volume snapshot enc
 		4. Create a dynamic volume snapshot from PVC [3]
 		5. Create PVC with EncryptionClass [2] from snapshot [4]
 	*/
-	ginkgo.It("Verify PVC from snapshot is recrypted with the same EncryptionClass", func() {
+	ginkgo.It("Verify PVC from snapshot is recrypted with the same EncryptionClass", ginkgo.Label(p1, wcp, negative, vc90), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -218,7 +218,7 @@ var _ = ginkgo.Describe("[csi-supervisor] [encryption] Block volume snapshot enc
 		6. Create second EncryptionClass with encryption key [5]
 		7. Create PVC with EncryptionClass [6] from snapshot [4]
 	*/
-	ginkgo.It("Verify PVC from snapshot is recrypted with different EncryptionClass", func() {
+	ginkgo.It("Verify PVC from snapshot is recrypted with different EncryptionClass", ginkgo.Label(p1, wcp, negative, vc90), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -268,7 +268,7 @@ var _ = ginkgo.Describe("[csi-supervisor] [encryption] Block volume snapshot enc
 		4. Create a dynamic volume snapshot from PVC [3]
 		5. Create PVC with EncryptionClass [2] from snapshot [4]
 	*/
-	ginkgo.It("Verify PVC from snapshot is encrypted with EncryptionClass", func() {
+	ginkgo.It("Verify PVC from snapshot is encrypted with EncryptionClass", ginkgo.Label(p1, wcp, negative, vc90), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -310,7 +310,7 @@ var _ = ginkgo.Describe("[csi-supervisor] [encryption] Block volume snapshot enc
 		4. Create a dynamic volume snapshot from PVC [3]
 		5. Create PVC without encryption from snapshot [4]
 	*/
-	ginkgo.It("Verify PVC from snapshot is decrypted", func() {
+	ginkgo.It("Verify PVC from snapshot is decrypted", ginkgo.Label(p1, wcp, negative, vc90), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 

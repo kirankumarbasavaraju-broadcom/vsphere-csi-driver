@@ -104,7 +104,7 @@ var _ = ginkgo.Describe("[rwm-csi-tkg] File Volume Operation storm Test", func()
 		20. Verify CnsVolumeMetadata CRD is deleted
 		21. Verify volumes are deleted on CNS by using CNSQuery API
 	*/
-	ginkgo.It("Verify multiple Pods concurrently using a one file volume", func() {
+	ginkgo.It("Verify multiple Pods concurrently using a one file volume", ginkgo.Label(p0, file, tkg, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -337,7 +337,7 @@ var _ = ginkgo.Describe("[rwm-csi-tkg] File Volume Operation storm Test", func()
 		18. Verify CnsVolumeMetadata CRD is deleted
 		19. Verify volumes are deleted on CNS by using CNSQuery API
 	*/
-	ginkgo.It("Verify multiple Pods concurrently using a multiple file volume", func() {
+	ginkgo.It("Verify multiple Pods concurrently using a multiple file volume", ginkgo.Label(p0, file, tkg, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		var storageclass *storagev1.StorageClass

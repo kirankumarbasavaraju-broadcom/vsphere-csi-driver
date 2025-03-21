@@ -183,7 +183,7 @@ var _ = ginkgo.Describe("[block-snapshot-negative] Volume Snapshot Fault-Injecti
 		3. Should fail with an appropriate error
 	*/
 	ginkgo.It("Volume snapshot creation on a file-share volume", ginkgo.Label(p1, block, vanilla, snapshot,
-		negative), func() {
+		negative, vc70, vc80, vc90), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()

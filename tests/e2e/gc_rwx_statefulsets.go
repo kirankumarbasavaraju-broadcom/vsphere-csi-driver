@@ -111,7 +111,7 @@ var _ = ginkgo.Describe("[rwm-csi-tkg] File Volume Provision with Statefulsets",
 		19. Check if the VolumeID is deleted from CNS by using CNSQuery API
 
 	*/
-	ginkgo.It("Verify file volume provision with statefulsets with default podManagementPolicy", func() {
+	ginkgo.It("Verify file volume provision with statefulsets with default podManagementPolicy", ginkgo.Label(p0, file, tkg, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		var err error
@@ -406,7 +406,7 @@ var _ = ginkgo.Describe("[rwm-csi-tkg] File Volume Provision with Statefulsets",
 		19. Check if the VolumeID is deleted from CNS by using CNSQuery API
 
 	*/
-	ginkgo.It("Verify file volume provision with statefulsets with parallel podManagementPolicy", func() {
+	ginkgo.It("Verify file volume provision with statefulsets with parallel podManagementPolicy", ginkgo.Label(p0, file, tkg, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		var err error

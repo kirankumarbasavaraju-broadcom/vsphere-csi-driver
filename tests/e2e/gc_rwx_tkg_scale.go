@@ -108,7 +108,7 @@ var _ = ginkgo.Describe("[rwm-csi-tkg] TKG RWX for STS with GC worker nodes scal
 	   20. Verify CnsVolumeMetadata CRD are deleted
 	   21. Check if the VolumeID is deleted from CNS by using CNSQuery API
 	*/
-	ginkgo.It("Verify file volume provision by TKG worker scale up", func() {
+	ginkgo.It("Verify file volume provision by TKG worker scale up", ginkgo.Label(p0, file, tkg, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		var err error
@@ -353,7 +353,7 @@ var _ = ginkgo.Describe("[rwm-csi-tkg] TKG RWX for STS with GC worker nodes scal
 		20. Verify CnsVolumeMetadata CRD are deleted
 		21. Check if the VolumeID is deleted from CNS by using CNSQuery API
 	*/
-	ginkgo.It("Verify file volume provision by TKG worker scale down", func() {
+	ginkgo.It("Verify file volume provision by TKG worker scale down", ginkgo.Label(p0, file, tkg, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		var err error

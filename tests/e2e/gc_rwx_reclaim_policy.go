@@ -114,7 +114,7 @@ var _ = ginkgo.Describe("File Volume Test for Reclaim Policy", func() {
 		36. Verify CnsVolumeMetadata CRD is deleted
 		37. Check if the VolumeID is deleted from CNS by using CNSQuery API
 	*/
-	ginkgo.It("[rwm-csi-tkg] Verify Reclaim Policy Retain with file volume", func() {
+	ginkgo.It("[rwm-csi-tkg] Verify Reclaim Policy Retain with file volume", ginkgo.Label(p0, file, tkg, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -388,7 +388,7 @@ var _ = ginkgo.Describe("File Volume Test for Reclaim Policy", func() {
 		18. Verify CnsVolumeMetadata CRD is deleted
 		19. Check if the VolumeID is deleted from CNS by using CNSQuery API
 	*/
-	ginkgo.It("Verify ReadWriteOnce PVC is not usable as ReadWriteMany", func() {
+	ginkgo.It("Verify ReadWriteOnce PVC is not usable as ReadWriteMany", ginkgo.Label(p0, file, tkg, vc70), ginkgo.Label(p0, file, tkg, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -508,7 +508,7 @@ var _ = ginkgo.Describe("File Volume Test for Reclaim Policy", func() {
 		22. Verify CnsVolumeMetadata CRD is deleted
 		23. Check if the VolumeID is deleted from CNS by using CNSQuery API
 	*/
-	ginkgo.It("[rwm-csi-tkg] Verify ReadWriteMany PVC is usable by another PVC as static provision", func() {
+	ginkgo.It("[rwm-csi-tkg] Verify ReadWriteMany PVC is usable by another PVC as static provision", ginkgo.Label(p0, file, tkg, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 

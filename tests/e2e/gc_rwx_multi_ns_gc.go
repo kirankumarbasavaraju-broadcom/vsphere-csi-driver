@@ -111,7 +111,7 @@ var _ = ginkgo.Describe("[rwm-csi-tkg] Volume Provision Across Namespace", func(
 		31. Verify CnsVolumeMetadata CRD is deleted
 		32. Check if the VolumeID is deleted from CNS by using CNSQuery API
 	*/
-	ginkgo.It("[rwm-csi-tkg] Verify static volume provisioning works across Namespace in the same GC", func() {
+	ginkgo.It("[rwm-csi-tkg] Verify static volume provisioning works across Namespace in the same GC", ginkgo.Label(p0, file, tkg, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 

@@ -77,7 +77,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 		labelsMap                  map[string]string
 		scName                     string
 		volHandle                  string
-		isQuotaValidationSupported bool
+		isStorageQuotaFSSEnabled   bool
 	)
 
 	ginkgo.BeforeEach(func() {
@@ -107,6 +107,14 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 
 		// reading vc credentials
 		vcAddress = e2eVSphere.Config.Global.VCenterHostname + ":" + sshdPort
+
+		// reading fullsync wait time
+		if os.Getenv(envPandoraSyncWaitTime) != "" {
+			pandoraSyncWaitTime, err = strconv.Atoi(os.Getenv(envPandoraSyncWaitTime))
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		} else {
+			pandoraSyncWaitTime = defaultPandoraSyncWaitTime
+		}
 
 		// reading operation scale value
 		if os.Getenv("VOLUME_OPS_SCALE") != "" {
@@ -167,11 +175,6 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 			snapc, err = snapclient.NewForConfig(restConfig)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			setStoragePolicyQuota(ctx, restConfig, storagePolicyName, namespace, rqLimit)
-
-			vcAddress := e2eVSphere.Config.Global.VCenterHostname + ":" + sshdPort
-			//if isQuotaValidationSupported is true then quotaValidation is considered in tests
-			vcVersion = getVCversion(ctx, vcAddress)
-			isQuotaValidationSupported = isVersionGreaterOrEqual(vcVersion, quotaSupportedVCVersion)
 		}
 
 		var datacenters []string
@@ -201,6 +204,10 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 		} else {
 			pandoraSyncWaitTime = defaultPandoraSyncWaitTime
 		}
+
+		//Remove this code once the FSS is enabled
+		vcAddress := e2eVSphere.Config.Global.VCenterHostname + ":" + sshdPort
+		isStorageQuotaFSSEnabled = isFssEnabled(ctx, vcAddress, "STORAGE_QUOTA_M2")
 	})
 
 	ginkgo.AfterEach(func() {
@@ -284,7 +291,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		}()
 
-		if isQuotaValidationSupported && supervisorCluster {
+		if isStorageQuotaFSSEnabled && supervisorCluster {
 			totalQuotaUsedBefore, _, storagePolicyQuotaBefore, _, storagePolicyUsageBefore, _ =
 				getStoragePolicyUsedAndReservedQuotaDetails(ctx, restConfig,
 					storageclass.Name, namespace, snapshotUsage, snapshotExtensionName)
@@ -351,7 +358,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 
 		snapshotSize := getAggregatedSnapshotCapacityInMb(e2eVSphere, volHandle)
 
-		if isQuotaValidationSupported && supervisorCluster {
+		if isStorageQuotaFSSEnabled && supervisorCluster {
 			totalQuotaUsedAfter, storagePolicyQuotaAfter, storagePolicyUsageAfter =
 				validateQuotaUsageAfterResourceCreation(ctx, restConfig,
 					storageclass.Name, namespace, snapshotUsage, snapshotExtensionName,
@@ -365,7 +372,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 			volumeSnapshot, pandoraSyncWaitTime, volHandle, snapshotId, true)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		if isQuotaValidationSupported && supervisorCluster {
+		if isStorageQuotaFSSEnabled && supervisorCluster {
 			validateQuotaUsageAfterCleanUp(ctx, restConfig, storageclass.Name, namespace, snapshotUsage,
 				snapshotExtensionName, snapshotSize, totalQuotaUsedAfter, storagePolicyQuotaAfter,
 				storagePolicyUsageAfter)
@@ -392,7 +399,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 		10. Cleanup the pvc
 	*/
 	ginkgo.It("[block-vanilla-snapshot] Verify snapshot static provisioning through K8s "+
-		"API workflow", ginkgo.Label(p0, block, vanilla, snapshot, stable), func() {
+		"API workflow", ginkgo.Label(p0, block, vanilla, snapshot, stable, vc70), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -553,7 +560,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 		12. Delete the pvc
 	*/
 	ginkgo.It("[block-vanilla-snapshot] Verify snapshot static provisioning "+
-		"via CNS", ginkgo.Label(p0, block, vanilla, snapshot, stable), func() {
+		"via CNS", ginkgo.Label(p0, block, vanilla, snapshot, stable, vc70), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -694,7 +701,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 		13. Cleanup the pvc, volume snapshot class and storage class
 	*/
 	ginkgo.It("[block-vanilla-snapshot] Verify snapshot static provisioning with "+
-		"deletion policy Retain", ginkgo.Label(p0, block, vanilla, snapshot, stable), func() {
+		"deletion policy Retain", ginkgo.Label(p0, block, vanilla, snapshot, stable, vc70), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -875,7 +882,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 		10. Cleanup the snapshot and delete the volume
 	*/
 	ginkgo.It("[block-vanilla-snapshot] Verify snapshot static provisioning with deletion "+
-		"policy Retain - test2", ginkgo.Label(p0, block, vanilla, snapshot, stable), func() {
+		"policy Retain - test2", ginkgo.Label(p0, block, vanilla, snapshot, stable, vc70), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -1022,7 +1029,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	*/
 
 	ginkgo.It("[block-vanilla-snapshot] Volume restore using snapshot a dynamic snapshot b "+
-		"pre-provisioned snapshot", ginkgo.Label(p0, block, vanilla, snapshot, stable), func() {
+		"pre-provisioned snapshot", ginkgo.Label(p0, block, vanilla, snapshot, stable, vc70), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -1363,7 +1370,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	   17. Delete SC and VolumeSnapshotClass
 	*/
 	ginkgo.It("[block-vanilla-snapshot] [tkg-snapshot] Volume snapshot creation and restoration workflow "+
-		"with xfs filesystem", ginkgo.Label(p0, block, vanilla, tkg, snapshot, stable), func() {
+		"with xfs filesystem", ginkgo.Label(p0, block, vanilla, tkg, snapshot, stable, vc70), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -1593,7 +1600,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		}()
 
-		if isQuotaValidationSupported && supervisorCluster {
+		if isStorageQuotaFSSEnabled && supervisorCluster {
 			totalQuotaUsedBefore, _, storagePolicyQuotaBefore, _, storagePolicyUsageBefore, _ =
 				getStoragePolicyUsedAndReservedQuotaDetails(ctx, restConfig,
 					storageclass.Name, namespace, snapshotUsage, snapshotExtensionName)
@@ -1634,7 +1641,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 
 		snapshotSize := getAggregatedSnapshotCapacityInMb(e2eVSphere, volHandle)
 
-		if isQuotaValidationSupported && supervisorCluster {
+		if isStorageQuotaFSSEnabled && supervisorCluster {
 			validateQuotaUsageAfterResourceCreation(ctx, restConfig,
 				storageclass.Name, namespace, snapshotUsage, snapshotExtensionName,
 				snapshotSize, totalQuotaUsedBefore, storagePolicyQuotaBefore,
@@ -1669,7 +1676,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 			scName = storagePolicyName2
 			storageclass1, err = client.StorageV1().StorageClasses().Get(ctx, scName, metav1.GetOptions{})
 
-			if isQuotaValidationSupported && supervisorCluster {
+			if isStorageQuotaFSSEnabled && supervisorCluster {
 				// setting resource quota for storage policy tagged to supervisor namespace
 				setStoragePolicyQuota(ctx, restConfig, storagePolicyName2, namespace, rqLimit)
 			}
@@ -2431,7 +2438,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		}
 
-		if isQuotaValidationSupported && supervisorCluster {
+		if isStorageQuotaFSSEnabled && supervisorCluster {
 			totalQuotaUsedBefore, _, storagePolicyQuotaBefore, _, storagePolicyUsageBefore, _ =
 				getStoragePolicyUsedAndReservedQuotaDetails(ctx, restConfig,
 					storageclass.Name, namespace, snapshotUsage, snapshotExtensionName)
@@ -2499,7 +2506,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 		framework.Logf("snapshotSize1  + snapshotSize2 = snapshotSize, %d + %d = %d",
 			snapshotSize1, snapshotSize2, snapshotSize)
 
-		if isQuotaValidationSupported && supervisorCluster {
+		if isStorageQuotaFSSEnabled && supervisorCluster {
 			totalQuotaUsedAfter, storagePolicyQuotaAfter, storagePolicyUsageAfter =
 				validateQuotaUsageAfterResourceCreation(ctx, restConfig,
 					storageclass.Name, namespace, snapshotUsage, snapshotExtensionName,
@@ -2559,7 +2566,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 			volumeSnapshot2, pandoraSyncWaitTime, volHandle2, snapshotId2, true)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		if isQuotaValidationSupported && supervisorCluster {
+		if isStorageQuotaFSSEnabled && supervisorCluster {
 			validateQuotaUsageAfterCleanUp(ctx, restConfig, storageclass.Name, namespace, snapshotUsage,
 				snapshotExtensionName, snapshotSize, totalQuotaUsedAfter, storagePolicyQuotaAfter,
 				storagePolicyUsageAfter)
@@ -2774,7 +2781,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	   9. Volume Create should fail with an appropriate error on k8s side
 	*/
 	ginkgo.It("[block-vanilla-snapshot] Pre-provisioned snapshot using incorrect/non-existing "+
-		"static snapshot", ginkgo.Label(p0, block, vanilla, snapshot, negative), func() {
+		"static snapshot", ginkgo.Label(p0, block, vanilla, snapshot, negative, vc70), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -2931,7 +2938,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 		8. Cleanup the snapshot and pvc
 	*/
 	ginkgo.It("[block-vanilla-snapshot] Create a volume from a snapshot that is still not "+
-		"ready-to-use", ginkgo.Label(p0, block, vanilla, snapshot, stable, negative), func() {
+		"ready-to-use", ginkgo.Label(p0, block, vanilla, snapshot, stable, negative, vc70), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -3641,7 +3648,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	*/
 
 	ginkgo.It("[block-vanilla-snapshot][supervisor-snapshot] Snapshot restore while the Host "+
-		"is Down", ginkgo.Label(p0, block, vanilla, snapshot, disruptive), func() {
+		"is Down", ginkgo.Label(p1, block, vanilla, snapshot, disruptive, negative, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		var totalQuotaUsedBefore, storagePolicyQuotaBefore, storagePolicyUsageBefore *resource.Quantity
@@ -3673,7 +3680,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		}()
 
-		if isQuotaValidationSupported && supervisorCluster {
+		if isStorageQuotaFSSEnabled && supervisorCluster {
 			totalQuotaUsedBefore, _, storagePolicyQuotaBefore, _, storagePolicyUsageBefore, _ =
 				getStoragePolicyUsedAndReservedQuotaDetails(ctx, restConfig,
 					storageclass.Name, namespace, snapshotUsage, snapshotExtensionName)
@@ -3714,7 +3721,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 
 		snapshotSize := getAggregatedSnapshotCapacityInMb(e2eVSphere, volHandle)
 
-		if isQuotaValidationSupported && supervisorCluster {
+		if isStorageQuotaFSSEnabled && supervisorCluster {
 			totalQuotaUsedAfter, storagePolicyQuotaAfter, storagePolicyUsageAfter =
 				validateQuotaUsageAfterResourceCreation(ctx, restConfig,
 					storageclass.Name, namespace, snapshotUsage, snapshotExtensionName,
@@ -3779,7 +3786,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 			volumeSnapshot, pandoraSyncWaitTime, volHandle, snapshotId, false)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		if isQuotaValidationSupported && supervisorCluster {
+		if isStorageQuotaFSSEnabled && supervisorCluster {
 			validateQuotaUsageAfterCleanUp(ctx, restConfig, storageclass.Name, namespace, snapshotUsage,
 				snapshotExtensionName, snapshotSize, totalQuotaUsedAfter, storagePolicyQuotaAfter,
 				storagePolicyUsageAfter)
@@ -4051,7 +4058,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	   9. Cleanup pvc/sc
 	*/
 	ginkgo.It("[block-vanilla-snapshot] VC password reset during snapshot creation", ginkgo.Label(p1, block,
-		vanilla, snapshot, disruptive), func() {
+		vanilla, snapshot, disruptive, vc70), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -4554,7 +4561,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	       max-snapshots per volume fails - check error returned
 	*/
 	ginkgo.It("[block-vanilla-snapshot] Max Snapshots per volume test", ginkgo.Label(p1, block,
-		vanilla, snapshot), func() {
+		vanilla, snapshot, vc70), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -4959,7 +4966,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 		3. Cleanup of snapshot, pvc and sc
 	*/
 	ginkgo.It("[tkg-snapshot] [supervisor-snapshot] Volume provision and snapshot creation/restore on "+
-		"VSAN2 Datastore", ginkgo.Label(p0, snapshot, tkg, newTest), func() {
+		"VSAN2 Datastore", ginkgo.Label(p0, snapshot, tkg, newTest, vc80), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		invokeSnapshotOperationsOnSharedDatastore(client, ctx, namespace, scParameters, snapc, "VSAN", pandoraSyncWaitTime)
@@ -5131,7 +5138,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	*/
 
 	ginkgo.It("[tkg-snapshot] Verify pre-provisioned static snapshot workflow", ginkgo.Label(p0, snapshot, tkg,
-		newTest), func() {
+		newTest, vc80), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -5245,7 +5252,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	*/
 
 	ginkgo.It("[tkg-snapshot] Volume restore using dynamic and pre-provisioned snapshot on "+
-		"guest cluster", ginkgo.Label(p0, snapshot, tkg, newTest, flaky), func() {
+		"guest cluster", ginkgo.Label(p0, snapshot, tkg, newTest, flaky, vc80), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -5431,7 +5438,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	   8. Volume Create should fail with an appropriate error on k8s side
 	*/
 	ginkgo.It("[tkg-snapshot] Restore volume using non-existing static snapshot", ginkgo.Label(p0, snapshot, tkg,
-		newTest), func() {
+		newTest, vc80), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -5560,7 +5567,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	   8. Cleanup the snapshot and pvc
 	*/
 	ginkgo.It("[tkg-snapshot] Restore volume from a static snapshot that is still not "+
-		"ready-to-use", ginkgo.Label(p0, snapshot, tkg, newTest), func() {
+		"ready-to-use", ginkgo.Label(p0, snapshot, tkg, newTest, vc80), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -5732,7 +5739,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	*/
 
 	ginkgo.It("[tkg-snapshot][supervisor-snapshot] Perform online resize on restored volume", ginkgo.Label(p0,
-		snapshot, tkg, newTest, stable), func() {
+		snapshot, tkg, newTest, stable, vc80), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -5934,7 +5941,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	*/
 
 	ginkgo.It("[tkg-snapshot][supervisor-snapshot] Offline relocation of FCD "+
-		"with snapshots", ginkgo.Label(p0, snapshot, tkg, newTest, stable), func() {
+		"with snapshots", ginkgo.Label(p0, snapshot, tkg, newTest, stable, vc80), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -6084,7 +6091,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	   5.  Run cleanup: Delete snapshots, restored-volumes, pods.
 	*/
 	ginkgo.It("[tkg-snapshot] Dynamic snapshot created in one guest cluster "+
-		"and restore it on another guest cluster", ginkgo.Label(p0, snapshot, tkg, newTest, negative), func() {
+		"and restore it on another guest cluster", ginkgo.Label(p0, snapshot, tkg, newTest, negative, vc80), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -6206,7 +6213,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 		6.  Perform Cleanup.
 	*/
 	ginkgo.It("[tkg-snapshot][supervisor-snapshot] Volume mode "+
-		"conversion", ginkgo.Label(p0, snapshot, tkg, newTest, stable, negative), func() {
+		"conversion", ginkgo.Label(p0, snapshot, tkg, newTest, stable, negative, vc80), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -6314,7 +6321,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	*/
 
 	ginkgo.It("[tkg-snapshot] Volume snapshot creation on a file-share volume on a guest "+
-		"cluster", ginkgo.Label(p1, snapshot, tkg, newTest, negative, stable), func() {
+		"cluster", ginkgo.Label(p1, snapshot, tkg, newTest, negative, stable, vc80), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -6360,7 +6367,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	*/
 
 	ginkgo.It("[tkg-snapshot][supervisor-snapshot] Create restore volume snapshot "+
-		"in consistent order", ginkgo.Label(p0, snapshot, tkg, newTest, stable), func() {
+		"in consistent order", ginkgo.Label(p0, snapshot, tkg, newTest, stable, vc80), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -6535,7 +6542,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	*/
 
 	ginkgo.It("[tkg-snapshot][supervisor-snapshot] Detach volume with "+
-		"snapshot", ginkgo.Label(p1, snapshot, tkg, newTest, stable), func() {
+		"snapshot", ginkgo.Label(p1, snapshot, tkg, newTest, stable, vc80), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -6661,7 +6668,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	*/
 
 	ginkgo.It("[tkg-snapshot] Provisioning of static volume on guest cluster using FCD with snapshot "+
-		"creation", ginkgo.Label(p0, snapshot, tkg, newTest, stable), func() {
+		"creation", ginkgo.Label(p0, snapshot, tkg, newTest, stable, vc80), func() {
 
 		var err error
 		ctx, cancel := context.WithCancel(context.Background())
@@ -6900,7 +6907,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 			c) Restart services
 	*/
 	ginkgo.It("[tkg-snapshot][supervisor-snapshot] Scale up snapshot creation by increasing the volume counts and "+
-		"in between restart services", ginkgo.Label(p1, snapshot, tkg, newTest), func() {
+		"in between restart services", ginkgo.Label(p1, snapshot, tkg, newTest, vc80), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -7060,7 +7067,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	*/
 
 	ginkgo.It("[tkg-snapshot][supervisor-snapshot] Max Snapshots per volume on wcp and gc", ginkgo.Label(
-		p1, snapshot, tkg, newTest), func() {
+		p1, snapshot, tkg, newTest, vc80), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -7147,7 +7154,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	*/
 
 	ginkgo.It("[tkg-snapshot] Create dynamic snapshot in GC1 and referring it create pre-provisoned snapshot "+
-		"in GC2", ginkgo.Label(p1, snapshot, tkg, newTest), func() {
+		"in GC2", ginkgo.Label(p1, snapshot, tkg, newTest, vc80), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -7338,7 +7345,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	*/
 
 	ginkgo.It("[supervisor-snapshot] Volume restore using a "+
-		"dynamic snapshot", ginkgo.Label(p0, wcp, snapshot, block, stable), func() {
+		"dynamic snapshot", ginkgo.Label(p0, wcp, snapshot, block, stable, vc90), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -7488,7 +7495,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	*/
 
 	ginkgo.It("[supervisor-snapshot] Verify static provisioning workflow "+
-		"with snapshot", ginkgo.Label(p0, block, wcp), func() {
+		"with snapshot", ginkgo.Label(p0, block, wcp, vc90), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -7843,7 +7850,7 @@ var _ = ginkgo.Describe("Volume Snapshot Basic Test", func() {
 	*/
 
 	ginkgo.It("[supervisor-snapshot] Supervisor password rotation during snapshot creation", ginkgo.Label(p1, block,
-		wcp, snapshot, disruptive), func() {
+		wcp, snapshot, disruptive, vc90), func() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()

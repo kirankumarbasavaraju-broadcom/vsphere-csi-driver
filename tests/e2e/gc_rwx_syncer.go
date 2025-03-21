@@ -103,7 +103,7 @@ var _ = ginkgo.Describe("[rwm-csi-tkg] File Volume Test for label updates", func
 		18. Verify CnsVolumeMetadata CRD is deleted
 		19. Verify volume is deleted on CNS by using CNSQuery API
 	*/
-	ginkgo.It("[rwm-csi-tkg] Verify RWX volume labels", func() {
+	ginkgo.It("[rwm-csi-tkg] Verify RWX volume labels", ginkgo.Label(p0, file, tkg, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		var storageclasspvc *storagev1.StorageClass
@@ -279,7 +279,7 @@ var _ = ginkgo.Describe("[rwm-csi-tkg] File Volume Test for label updates", func
 		34. Verify CnsVolumeMetadata CRD is deleted
 		35. Verify volume is deleted on CNS by using CNSQuery API
 	*/
-	ginkgo.It("[rwm-csi-tkg] Verify PVC metadata reflects pods names", func() {
+	ginkgo.It("[rwm-csi-tkg] Verify PVC metadata reflects pods names", ginkgo.Label(p0, file, tkg, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -617,7 +617,7 @@ var _ = ginkgo.Describe("[rwm-csi-tkg] File Volume Test for label updates", func
 		21. Verify CnsVolumeMetadata CRD is deleted
 		22. Verify volume is deleted on CNS by using CNSQuery API
 	*/
-	ginkgo.It("[rwm-csi-tkg] Verify Pod mounted with PVC while the csi-controller in SV is down", func() {
+	ginkgo.It("[rwm-csi-tkg] Verify Pod mounted with PVC while the csi-controller in SV is down", ginkgo.Label(p1, file, tkg, negative, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -785,7 +785,7 @@ var _ = ginkgo.Describe("[rwm-csi-tkg] File Volume Test for label updates", func
 		15. Verify CnsVolumeMetadata CRD is deleted
 		16. Verify volume is deleted on CNS by using CNSQuery API
 	*/
-	ginkgo.It("[rwm-csi-tkg] Verify RWX label update on SV csi-controller down", func() {
+	ginkgo.It("[rwm-csi-tkg] Verify RWX label update on SV csi-controller down", ginkgo.Label(p1, file, tkg, negative, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		var storageclasspvc *storagev1.StorageClass

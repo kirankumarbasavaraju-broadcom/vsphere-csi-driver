@@ -113,7 +113,7 @@ var _ = ginkgo.Describe("[rwm-csi-destructive-tkg] Statefulsets with File Volume
 			15. Verify if PVCs and PVs are deleted in the SV cluster
 			16. Verify CnsVolumeMetadata CRD are deleted
 	*/
-	ginkgo.It("TKG Destructive Test", func() {
+	ginkgo.It("TKG Destructive Test", ginkgo.Label(p1, file, tkg, vc70), func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		var err error

@@ -271,19 +271,18 @@ const (
 	storageQuotaWebhookPrefix                = "storage-quota-webhook"
 	envStoragePolicyNameForVsanNfsDatastores = "STORAGE_POLICY_FOR_VSAN_NFS_DATASTORES"
 	devopsKubeConf                           = "DEV_OPS_USER_KUBECONFIG"
-	quotaSupportedVCVersion                  = "9.0.0"
 )
 
 /*
 // test suite labels
 
 flaky -> label include the testcases which fails intermittently
-disruptive -> label include the testcases which are disruptive in nature
+disruptive -> label include the testcases which are disruptive in nature ex: hosts down, cluster down, datastore down
 vanilla -> label include the testcases for block, file, configSecret, topology etc.
 stable -> label include the testcases which do not fail
 longRunning -> label include the testcases which takes longer time for completion
 p0 -> label include the testcases which are P0
-p1 -> label include the testcases which are P1
+p1 -> label include the testcases which are P1, vcreboot, negative
 p2 -> label include the testcases which are P2
 semiAutomated -> label include the testcases which are semi-automated
 newTests -> label include the testcases which are newly automated
@@ -292,6 +291,10 @@ level2 -> label include the level-2 topology testcases or pipeline specific
 level5 -> label include the level-5 topology testcases
 customPort -> label include the testcases running on vCenter custom port <VC:444>
 deprecated ->label include the testcases which are no longer in execution
+negative -> Negative tests, ex: service/pod down(sps, vsan-health, vpxd, hostd, csi pods)
+vc70 -> Tests for vc70 features
+vc80 -> Tests for vc80 features
+vc80 -> Tests for vc90 features
 */
 const (
 	flaky                 = "flaky"
@@ -330,6 +333,9 @@ const (
 	controlPlaneOnPrimary = "controlPlaneOnPrimary"
 	distributed           = "distributed"
 	vmsvc                 = "vmsvc"
+	vc70                  = "vc70"
+	vc80                  = "vc80"
+	vc90                  = "vc90"
 )
 
 // The following variables are required to know cluster type to run common e2e
@@ -469,11 +475,9 @@ var (
 
 // For management workload domain isolation
 var (
-	envZonal2StoragePolicyName            = "ZONAL2_STORAGE_POLICY_IMM"
-	envZonal2StoragePolicyNameLateBidning = "ZONAL2_STORAGE_POLICY_WFFC"
-	envZonal1StoragePolicyName            = "ZONAL1_STORAGE_POLICY_IMM"
-	topologyDomainIsolation               = "Workload_Management_Isolation"
-	envSharedStoragePolicyName            = "SHARED_STORAGE_POLICY"
+	envZonal2StoragePolicyName = "ZONAL2_STORAGECLASS"
+	envWrkldDomain1ZoneName    = "WORKLOAD_1_ZONE_NAME"
+	topologyDomainIsolation    = "Workload_Management_Isolation"
 )
 
 // GetAndExpectStringEnvVar parses a string from env variable.
